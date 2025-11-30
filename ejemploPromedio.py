@@ -4,28 +4,37 @@ from tkinter import messagebox, simpledialog, ttk
 from PIL import Image, ImageTk
 import random
 
+#Creamos una lista con carreras
 
 estudiantes = []
+Carreras = ["Ingeniería de Sistemas", "Ingenuería Civil", "Ingeniería de Software","Administración de Empresas", "Contabilidad", 
+           "Marketing", "Derecho", "Medicina", "Arquitectura", "Psicología"]
 
-def generar_datos_random():
+def generar_datos_random(start_id=101):
     nombres_base = ["Ana Torres", "Carlos Ruiz", "Elena Gomez", "David Gil", 
                     "Beatriz Lima", "Fernando Solis", "Gloria Mendez", "Hugo Chavez"]
+
     lista_nueva = []
-    start_id = 101
+
+
     
     for i, nombre in enumerate(nombres_base):
-        notas = [round(random.uniform(5, 20), 1) for _ in range(3)]
-        promedio = round(sum(notas) / len(notas), 2)
+        notas = [round(random.uniform(5, 20), 1) for _ in range(4)]
+        promedio = (notas[0] * 0.1) + (notas[1] * 0.2) + (notas[2] * 0.3) + (notas[3] * 0.4)
+        promedio = round(promedio, 2)
         estado = "Aprobado" if promedio >= 11 else "Reprobado"
+
+        Carreras_random = random.choice(Carreras)
         
         est = {
-            "id": start_id + i, "nombre": nombre, 
-            "n1": notas[0], "n2": notas[1], "n3": notas[2],
+            "id": f"N00{start_id + i:08d}", "nombre": nombre, "carrera": Carreras_random, 
+            "n1": notas[0], "n2": notas[1], "n3": notas[2], "n4": notas[3],
             "promedio": promedio, "estado": estado
         }
         lista_nueva.append(est)
     return lista_nueva
 
+# Algoritmo Recursivo: MergeSort (Mérito)
 def merge_sort_descendente(lista):
     if len(lista) <= 1: return lista
     medio = len(lista) // 2
@@ -42,175 +51,149 @@ def merge(izq, der):
     resultado.extend(izq[i:]); resultado.extend(der[j:])
     return resultado
 
+# Algoritmo Recursivo: Suma de Promedios
 def suma_promedios_recursiva(lista, n):
     if n == 0: return 0
     return lista[n-1]['promedio'] + suma_promedios_recursiva(lista, n-1)
 
+def Conteo_Recursivo_por_Carrera(lista, carrera, n=None):
+    if n is None: n = len(lista)
+    if n == 0: return 0
+    count = Conteo_Recursivo_por_Carrera(lista, carrera, n-1)
+    if lista[n-1]['carrera'] == carrera:
+        count += 1
+    return count
+
+# Inicializamos
 estudiantes = generar_datos_random()
 
-# --- 2. INTERFAZ GRÁFICA ---
-
 root = Tk()
-root.title("Sistema de Gestión Académica")
-root.geometry("1150x650")
+root.title("Sistema Académico Multi-Carrera")
+root.geometry("1250x650") # Un poco más ancho para la nueva columna
 root.config(bg="#eceff1")
 
 # TOP BAR
-top = Frame(root, bg="#1a237e", height=80)
+top = Frame(root, bg="#0d47a1", height=80)
 top.pack(fill="x", side="top")
-Label(top, text="🎓 SISTEMA DE NOTAS Y REGISTRO", fg="white", bg="#1a237e", font=("Arial", 22, "bold")).pack(pady=20)
+Label(top, text="🎓 GESTIÓN UNIVERSITARIA", fg="white", bg="#0d47a1", font=("Arial", 22, "bold")).pack(pady=20)
 
-# LOGO
+# LOGO AREA
 logo_frame = Frame(root, bg="#eceff1")
 logo_frame.pack(pady=5)
-try:
-    img = Image.open("logo.png").resize((70, 70))
-    logo_img = ImageTk.PhotoImage(img)
-    Label(logo_frame, image=logo_img, bg="#eceff1").pack()
-except:
-    Label(logo_frame, text="🏛️", bg="#eceff1", fg="#1a237e", font=("Arial", 40)).pack()
+Label(logo_frame, text="🏛️", bg="#eceff1", fg="#0d47a1", font=("Arial", 40)).pack()
 
-# BODY (CONTENEDOR DE TARJETAS)
+# BODY
 body = Frame(root, bg="#eceff1")
 body.pack(pady=10)
 
 def tarjeta(parent, color, icono, texto, comando):
-    frame = Frame(parent, bg=color, width=140, height=110, bd=0, relief="raised", cursor="hand2")
+    frame = Frame(parent, bg=color, width=150, height=110, bd=0, relief="raised", cursor="hand2")
     frame.pack_propagate(0)
     frame.pack(side="left", padx=8)
     
-    lbl_icon = Label(frame, text=icono, bg=color, fg="white", font=("Arial", 30))
-    lbl_icon.pack(pady=5)
-    lbl_text = Label(frame, text=texto, bg=color, fg="white", font=("Arial", 11, "bold"))
-    lbl_text.pack()
-
-    # Hacemos que todo el cuadro sea clickeable
-    for widget in (frame, lbl_icon, lbl_text):
+    for widget in [frame, Label(frame, text=icono, bg=color, fg="white", font=("Arial", 30)), 
+                   Label(frame, text=texto, bg=color, fg="white", font=("Arial", 11, "bold"))]:
+        if isinstance(widget, Frame): widget.pack_propagate(0)
+        else: widget.pack(pady=2 if "Arial 30" in str(widget['font']) else 0)
         widget.bind("<Button-1>", lambda e: comando())
     return frame
 
-# TABLA
+# TABLA (Treeview)
 panel = Frame(root, bg="white")
 panel.pack(fill="both", expand=True, padx=20, pady=10)
 
-columnas = ("id", "nombre", "n1", "n2", "n3", "promedio", "estado")
-tree = ttk.Treeview(panel, columns=columnas, show="headings", height=10)
+# Definimos columnas incluyendo 'carrera'
+cols = ("id", "nombre", "carrera", "T1", "T2", "T3", "EF" "promedio", "estado")
+tree = ttk.Treeview(panel, columns=cols, show="headings")
 
-headers = ["ID", "Estudiante", "Nota 1", "Nota 2", "Nota 3", "Promedio", "Estado"]
-anchos = [50, 250, 60, 60, 60, 80, 100]
+headers = ["ID", "Estudiante", "Carrera", "T1", "T2", "T3","EF", "Prom.", "Estado"]
+anchos = [50, 200, 180, 50, 50, 50, 60, 90] # Ajuste de anchos
 
-for col, head, ancho in zip(columnas, headers, anchos):
-    tree.heading(col, text=head)
-    tree.column(col, width=ancho, anchor="center" if col != "nombre" else "w")
+for c, h, w in zip(cols, headers, anchos):
+    tree.heading(c, text=h)
+    tree.column(c, width=w, anchor="center" if c not in ["nombre", "carrera"] else "w")
 
 scrolly = ttk.Scrollbar(panel, orient=tk.VERTICAL, command=tree.yview)
 tree.configure(yscroll=scrolly.set)
 scrolly.pack(side="right", fill="y")
 tree.pack(fill="both", expand=True)
 
-# --- 3. FUNCIONES DE INTERACCIÓN ---
+# --- 4. LÓGICA DE INTERACCIÓN ---
 
 def actualizar_tabla(lista_datos=None):
     if lista_datos is None: lista_datos = estudiantes
     for item in tree.get_children(): tree.delete(item)
-    for est in lista_datos:
-        tree.insert("", "end", values=(est['id'], est['nombre'], est['n1'], est['n2'], est['n3'], est['promedio'], est['estado']))
+    for e in lista_datos:
+        tree.insert("", "end", values=(e['id'], e['nombre'], e['carrera'], e['n1'], e['n2'], e['n3'], e['promedio'], e['estado']))
 
-# --- NUEVA FUNCIÓN: REGISTRAR ALUMNO ---
-def cmd_nuevo_alumno():
-    # Ventana personalizada (TopLevel)
-    ventana_reg = Toplevel(root)
-    ventana_reg.title("Nuevo Alumno")
-    ventana_reg.geometry("300x350")
-    ventana_reg.config(bg="#f5f5f5")
-    ventana_reg.grab_set() # Bloquea la ventana principal hasta cerrar esta
-
-    Label(ventana_reg, text="Datos del Alumno", bg="#f5f5f5", font=("Arial", 12, "bold")).pack(pady=10)
-
-    # Entradas
-    entries = {}
-    campos = ["Nombre Completo", "Nota 1 (0-20)", "Nota 2 (0-20)", "Nota 3 (0-20)"]
-    
-    for campo in campos:
-        frame_campo = Frame(ventana_reg, bg="#f5f5f5")
-        frame_campo.pack(pady=5, padx=20, fill="x")
-        Label(frame_campo, text=campo, bg="#f5f5f5", anchor="w").pack(fill="x")
-        entry = Entry(frame_campo)
-        entry.pack(fill="x")
-        entries[campo] = entry
-
-    def guardar():
-        try:
-            nombre = entries["Nombre Completo"].get()
-            n1 = float(entries["Nota 1 (0-20)"].get())
-            n2 = float(entries["Nota 2 (0-20)"].get())
-            n3 = float(entries["Nota 3 (0-20)"].get())
-
-            if not nombre: raise ValueError("Nombre vacío")
-            if not (0 <= n1 <= 20 and 0 <= n2 <= 20 and 0 <= n3 <= 20):
-                messagebox.showerror("Error", "Las notas deben estar entre 0 y 20")
-                return
-
-            # Calcular datos
-            prom = round((n1 + n2 + n3) / 3, 2)
-            estado = "Aprobado" if prom >= 11 else "Reprobado"
-            
-            # Generar ID (El máximo actual + 1)
-            nuevo_id = max(e['id'] for e in estudiantes) + 1 if estudiantes else 101
-            
-            nuevo_estudiante = {
-                "id": nuevo_id, "nombre": nombre, 
-                "n1": n1, "n2": n2, "n3": n3,
-                "promedio": prom, "estado": estado
-            }
-            
-            estudiantes.append(nuevo_estudiante)
-            actualizar_tabla()
-            ventana_reg.destroy()
-            messagebox.showinfo("Éxito", f"Alumno {nombre} registrado correctamente.")
-            
-        except ValueError:
-            messagebox.showerror("Error", "Revise los datos ingresados.\nLas notas deben ser números.")
-
-    Button(ventana_reg, text="GUARDAR", bg="#4caf50", fg="white", command=guardar).pack(pady=20, fill="x", padx=20)
-
-def cmd_regenerar():
+def cmd_cambiar_datos():
     global estudiantes
-    estudiantes = generar_datos_random()
+    if estudiantes:
+        ultimo_id_num = int(estudiantes[-1]['id'][3:])  # Quitar "N00"
+        nuevo_start = ultimo_id_num + 1
+    else:
+        nuevo_start = 1
+
+    estudiantes = generar_datos_random(start_id=nuevo_start)
     actualizar_tabla()
+    messagebox.showinfo("Datos Actualizados", "Se han generado nuevos datos de estudiantes.")
+
+def cmd_reporte():
+    if not estudiantes: return
+    
+    # 1. Estadísticas básicas
+    mejor = max(estudiantes, key=lambda x: x['promedio'])
+    peor = min(estudiantes, key=lambda x: x['promedio'])
+    
+    resumen_carreras = ""
+    for carrera in Carreras:
+        count = Conteo_Recursivo_por_Carrera(estudiantes, carrera)
+        resumen_carreras += f"{carrera}: {count}\n"
+    
+            
+    msg = f"""
+    🏆 MEJOR RENDIMIENTO
+    Nombre: {mejor['nombre']}
+    Carrera: {mejor['carrera']}
+    Promedio: {mejor['promedio']}
+    
+    🏆 PEOR RENDIMIENTO
+    Nombre: {peor['nombre']}
+    Carrera: {peor['carrera']}
+    Promedio: {peor['promedio']}
+
+    ----------------------------------------
+    📊 DISTRIBUCIÓN POR CARRERAS (Recursivo)
+    ----------------------------------------
+    {resumen_carreras}
+    """
+
+
+    messagebox.showinfo("Reporte Avanzado", msg)
+
+def cmd_buscar():
+    nombre_buscar = simpledialog.askstring("Buscar Estudiante", "Ingrese el nombre del estudiante:")
+    if not nombre_buscar: return
+    resultados = [e for e in estudiantes if nombre_buscar.lower() in e['nombre'].lower()]
+    if resultados:
+        actualizar_tabla(resultados)
+    else:
+        messagebox.showinfo("No Encontrado", f"No se encontraron estudiantes con el nombre '{nombre_buscar}'.")
 
 def cmd_ordenar():
     global estudiantes
     estudiantes = merge_sort_descendente(estudiantes)
     actualizar_tabla()
-    messagebox.showinfo("Ordenado", "Lista ordenada por Mérito (MergeSort)")
-
-def cmd_buscar():
-    nombre = simpledialog.askstring("Buscar", "Nombre del estudiante:")
-    if nombre:
-        res = [e for e in estudiantes if nombre.lower() in e['nombre'].lower()]
-        if res: actualizar_tabla(res)
-        else: messagebox.showwarning("Error", "No encontrado"); actualizar_tabla()
-
-def cmd_reporte():
-    if not estudiantes: return
-    aprobados = len([e for e in estudiantes if e['promedio'] >= 11])
-    mejor = max(estudiantes, key=lambda x: x['promedio'])
-    messagebox.showinfo("Reporte", f"Total: {len(estudiantes)}\nAprobados: {aprobados}\nMejor: {mejor['nombre']} ({mejor['promedio']})")
-
-def cmd_prom_recursivo():
-    if not estudiantes: return
-    suma = suma_promedios_recursiva(estudiantes, len(estudiantes))
-    messagebox.showinfo("Recursividad", f"Promedio del Salón: {suma/len(estudiantes):.2f}")
+    messagebox.showinfo("Ordenado", "Alumnos ordenados por Promedio.")
 
 # --- BOTONES ---
-tarjeta(body, "#4caf50", "➕", "Nuevo", cmd_nuevo_alumno)
-tarjeta(body, "#283593", "🎲", "Random", cmd_regenerar)
-tarjeta(body, "#3949ab", "📋", "Todo", lambda: actualizar_tabla(estudiantes))
-tarjeta(body, "#303f9f", "🥇", "Mérito", cmd_ordenar)
+tarjeta(body, "#1565c0", "🎲", "+ Random", cmd_cambiar_datos)
+tarjeta(body, "#0277bd", "🥇", "Mérito", cmd_ordenar)
 tarjeta(body, "#1e88e5", "🔍", "Buscar", cmd_buscar)
-tarjeta(body, "#0277bd", "📊", "Reporte", cmd_reporte)
-tarjeta(body, "#006064", "➗", "Promedio", cmd_prom_recursivo)
+tarjeta(body, "#00838f", "📊", "Reporte", cmd_reporte)
+tarjeta(body, "#d32f2f", "🗑️", "Limpiar", lambda: [estudiantes.clear(), actualizar_tabla()])
 
+# Datos iniciales
 actualizar_tabla()
+
 root.mainloop()
