@@ -22,9 +22,6 @@ def generar_datos_random(start_id=101):
         "Walter Pariona", "Jesse Pinkman", "Andrew Morales", "Wilfredo Chiara", "Cecilia Rojas"]
 
     lista_nueva = []
-
-
-    
     for i, nombre in enumerate(nombres_base):
         notas = [round(random.uniform(5, 20), 1) for _ in range(4)]
         promedio = (notas[0] * 0.1) + (notas[1] * 0.2) + (notas[2] * 0.3) + (notas[3] * 0.4)
@@ -41,7 +38,7 @@ def generar_datos_random(start_id=101):
         lista_nueva.append(est)
     return lista_nueva
 
-# Algoritmo Recursivo: MergeSort (Mérito)
+# Algoritmo Recursivo: MergeSort 
 def merge_sort_descendente(lista):
     if len(lista) <= 1: return lista
     medio = len(lista) // 2
@@ -58,11 +55,11 @@ def merge(izq, der):
     resultado.extend(izq[i:]); resultado.extend(der[j:])
     return resultado
 
-# Algoritmo Recursivo: Suma de Promedios
 def suma_promedios_recursiva(lista, n):
     if n == 0: return 0
     return lista[n-1]['promedio'] + suma_promedios_recursiva(lista, n-1)
 
+# Algoritmo Recursivo: Conteo por Carrera
 def Conteo_Recursivo_por_Carrera(lista, carrera, n=None):
     if n is None: n = len(lista)
     if n == 0: return 0
@@ -76,20 +73,17 @@ estudiantes = generar_datos_random()
 
 root = Tk()
 root.title("Sistema Académico Multi-Carrera")
-root.geometry("1250x650") # Un poco más ancho para la nueva columna
+root.geometry("1250x650")
 root.config(bg="#eceff1")
 
-# TOP BAR
 top = Frame(root, bg="#0d47a1", height=80)
 top.pack(fill="x", side="top")
 Label(top, text="🎓 GESTIÓN UNIVERSITARIA", fg="white", bg="#0d47a1", font=("Arial", 22, "bold")).pack(pady=20)
 
-# LOGO AREA
 logo_frame = Frame(root, bg="#eceff1")
 logo_frame.pack(pady=5)
 Label(logo_frame, text="🏛️", bg="#eceff1", fg="#0d47a1", font=("Arial", 40)).pack()
 
-# BODY
 body = Frame(root, bg="#eceff1")
 body.pack(pady=10)
 
@@ -105,16 +99,14 @@ def tarjeta(parent, color, icono, texto, comando):
         widget.bind("<Button-1>", lambda e: comando())
     return frame
 
-# TABLA (Treeview)
 panel = Frame(root, bg="white")
 panel.pack(fill="both", expand=True, padx=20, pady=10)
 
-# Definimos columnas incluyendo 'carrera'
 cols = ("id", "nombre", "carrera", "T1", "T2", "T3", "EF" "promedio", "estado")
 tree = ttk.Treeview(panel, columns=cols, show="headings")
 
 headers = ["ID", "Estudiante", "Carrera", "T1", "T2", "T3","EF", "Prom.", "Estado"]
-anchos = [50, 200, 180, 50, 50, 50, 60, 90] # Ajuste de anchos
+anchos = [50, 200, 180, 50, 50, 50, 60, 90] 
 
 for c, h, w in zip(cols, headers, anchos):
     tree.heading(c, text=h)
@@ -125,18 +117,18 @@ tree.configure(yscroll=scrolly.set)
 scrolly.pack(side="right", fill="y")
 tree.pack(fill="both", expand=True)
 
-# --- 4. LÓGICA DE INTERACCIÓN ---
-
+# Actualizar tabla
 def actualizar_tabla(lista_datos=None):
     if lista_datos is None: lista_datos = estudiantes
     for item in tree.get_children(): tree.delete(item)
     for e in lista_datos:
-        tree.insert("", "end", values=(e['id'], e['nombre'], e['carrera'], e['n1'], e['n2'], e['n3'], e['promedio'], e['estado']))
+        tree.insert("", "end", values=(e['id'], e['nombre'], e['carrera'], e['n1'], e['n2'], e['n3'], e['n4'],e['promedio'], e['estado']))
 
+# Generar nuevos datos
 def cmd_cambiar_datos():
     global estudiantes
     if estudiantes:
-        ultimo_id_num = int(estudiantes[-1]['id'][3:])  # Quitar "N00"
+        ultimo_id_num = int(estudiantes[-1]['id'][3:]) 
         nuevo_start = ultimo_id_num + 1
     else:
         nuevo_start = 1
@@ -145,6 +137,7 @@ def cmd_cambiar_datos():
     actualizar_tabla()
     messagebox.showinfo("Datos Actualizados", "Se han generado nuevos datos de estudiantes.")
 
+# Aplicación del conteo recursivo
 def cmd_reporte():
     if not estudiantes: return
     mejor = max(estudiantes, key=lambda x: x['promedio'])
@@ -176,6 +169,7 @@ def cmd_reporte():
 
     messagebox.showinfo("Reporte Avanzado", msg)
 
+# Aplicacion de búsqueda lineal
 def cmd_buscar():
     nombre_buscar = simpledialog.askstring("Buscar Estudiante", "Ingrese el nombre del estudiante:")
     if not nombre_buscar: return
@@ -185,20 +179,19 @@ def cmd_buscar():
     else:
         messagebox.showinfo("No Encontrado", f"No se encontraron estudiantes con el nombre '{nombre_buscar}'.")
 
+# Aplicación de MergeSort
 def cmd_ordenar():
     global estudiantes
     estudiantes = merge_sort_descendente(estudiantes)
     actualizar_tabla()
     messagebox.showinfo("Ordenado", "Alumnos ordenados por Promedio.")
 
-# --- BOTONES ---
 tarjeta(body, "#1565c0", "🎲", "+ Random", cmd_cambiar_datos)
 tarjeta(body, "#0277bd", "🥇", "Mérito", cmd_ordenar)
 tarjeta(body, "#1e88e5", "🔍", "Buscar", cmd_buscar)
 tarjeta(body, "#00838f", "📊", "Reporte", cmd_reporte)
 tarjeta(body, "#d32f2f", "🗑️", "Limpiar", lambda: [estudiantes.clear(), actualizar_tabla()])
 
-# Datos iniciales
 actualizar_tabla()
 
 root.mainloop()
